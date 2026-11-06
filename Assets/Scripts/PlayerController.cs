@@ -10,8 +10,6 @@ public class PlayerController : NetworkBehaviour
     public float jumpForce = 5f;
     public TextMeshProUGUI userName;
 
-    public GameObject playerNameUI;
-
     public AudioSource audioSource;
     public AudioClip jumpClip;
 
@@ -97,6 +95,17 @@ public class PlayerController : NetworkBehaviour
     private void OnNameChanged(FixedString32Bytes previousValue, FixedString32Bytes newValue)
     {
         Debug.Log($"[NOMBRE ACTUALIZADO] El jugador con ID {OwnerClientId} ahora se llama: {newValue}");
+        // IMPORTANTE: Actualiza el texto flotante sobre la cabeza del jugador
+        if (userName != null)
+        {
+            userName.text = newValue.ToString();
+
+            userName.ForceMeshUpdate();
+
+            // 3. (Opcional) Si tu Canvas del nombre usa algún componente de organización automática (como Content Size Fitter),
+            // esto obliga a Unity a centrar de nuevo el contenedor en el espacio 3D.
+            Canvas.ForceUpdateCanvases();
+        }
     }
 
     private void ApplyColor(Color newColor)
@@ -267,6 +276,21 @@ public class PlayerController : NetworkBehaviour
                 netObj.Spawn(true);
             }
         }
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void RequestNameChangeServerRpc(string nuevoNombre)
+    {
+        // Validar en el servidor que el nombre no esté vacío o sea demasiado largo
+        if (string.IsNullOrEmpty(nuevoNombre)) return;
+
+        if (nuevoNombre.Length > 32)
+        {
+            nuevoNombre = nuevoNombre.Substring(0, 32);
+        }
+
+        // Al cambiar la NetworkVariable, se sincroniza automáticamente en todos los clientes
+        playerName.Value = nuevoNombre;
     }
 
     private void OnCollisionEnter(Collision collision)
