@@ -1,9 +1,10 @@
 using UnityEngine;
+using Unity.Netcode;
 
 public class FollowCamera : MonoBehaviour
 {
     [Header("Referencias")]
-    [Tooltip("El personaje que la cámara debe seguir.")]
+    [Tooltip("El personaje que la cámara debe seguir (se asigna automáticamente).")]
     public Transform objetivo;
 
     [Header("Configuración de Distancia")]
@@ -19,17 +20,11 @@ public class FollowCamera : MonoBehaviour
     public float anguloMaxY = 45f;
 
     [Header("Suavizado Elástico")]
-    [Tooltip("Velocidad de suavizado para el movimiento de posición.")]
     public float suavizadoPosicion = 10.0f;
-
-    [Tooltip("Velocidad de suavizado para el giro. Valores entre 8 y 15 dan el feeling de Fall Guys.")]
     public float suavizadoRotacion = 12.0f;
 
-    // Valores directos del ratón (sin suavizar)
     private float targetRotacionX = 0.0f;
     private float targetRotacionY = 0.0f;
-
-    // Valores actuales aplicados a la cámara (suavizados)
     private float currentRotacionX = 0.0f;
     private float currentRotacionY = 0.0f;
 
@@ -45,9 +40,14 @@ public class FollowCamera : MonoBehaviour
 
     void LateUpdate()
     {
-        if (!objetivo) return;
+        // Si aún no tenemos objetivo, lo buscamos automáticamente en la escena
+        if (objetivo == null)
+        {
+            BuscarJugadorLocal();
+            return;
+        }
 
-        // CONDICIÓN: Si el cursor está libre (menús), la cámara sigue al jugador pero no rota con el ratón
+        // CONDICIÓN: Si el cursor está libre (menús), la cámara sigue al jugador pero no rota
         if (Cursor.lockState != CursorLockMode.Locked)
         {
             Vector3 posicionBloqueada = objetivo.position - (Quaternion.Euler(currentRotacionY, currentRotacionX, 0) * Vector3.forward * distancia) + (Vector3.up * altura);
@@ -67,7 +67,7 @@ public class FollowCamera : MonoBehaviour
         // 2. Limitar el objetivo vertical
         targetRotacionY = Mathf.Clamp(targetRotacionY, anguloMinY, anguloMaxY);
 
-        // 3. Suavizado angular mediante LerpAngle
+        // 3. Suavizado angular
         currentRotacionX = Mathf.LerpAngle(currentRotacionX, targetRotacionX, suavizadoRotacion * Time.deltaTime);
         currentRotacionY = Mathf.LerpAngle(currentRotacionY, targetRotacionY, suavizadoRotacion * Time.deltaTime);
 
@@ -75,8 +75,23 @@ public class FollowCamera : MonoBehaviour
         Quaternion rotacionFinal = Quaternion.Euler(currentRotacionY, currentRotacionX, 0);
         Vector3 posicionDeseada = objetivo.position - (rotacionFinal * Vector3.forward * distancia) + (Vector3.up * altura);
 
-        // 5. Aplicar posición y rotación de manera fluida
+        // 5. Aplicar posición y rotación
         transform.position = Vector3.Lerp(transform.position, posicionDeseada, suavizadoPosicion * Time.deltaTime);
         transform.rotation = rotacionFinal;
+    }
+
+    private void BuscarJugadorLocal()
+    {
+        // Recorremos todos los NetworkObjects de la nueva escena para encontrar el nuestro (IsOwner)
+        // Usamos FindObjectsByType moderno para evitar warnings de deprecación
+        foreach (var netObj in FindObjectsByType<NetworkObject>(FindObjectsSortMode.None))
+        {
+            if (netObj.IsOwner && netObj.CompareTag("Player"))
+            {
+                objetivo = netObj.transform;
+                Debug.Log("¡Cámara conectada automáticamente al jugador local tras el cambio de escena!");
+                break;
+            }
+        }
     }
 }

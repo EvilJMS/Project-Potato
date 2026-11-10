@@ -68,6 +68,7 @@ public class PlayerController : NetworkBehaviour
         // BLOQUEO AL SPAWNEAR: Si este objeto nos pertenece localmente, bloqueamos el ratón para jugar
         if (IsOwner)
         {
+            
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }

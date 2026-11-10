@@ -190,7 +190,7 @@ GameObject:
   - component: {fileID: 6132682758302375503}
   m_Layer: 0
   m_Name: Jugador
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -425,7 +425,6 @@ MonoBehaviour:
   speed: 6
   jumpForce: 7
   userName: {fileID: 7881302166934449681}
-  playerNameUI: {fileID: 0}
   audioSource: {fileID: 6106836677893978804}
   jumpClip: {fileID: 8300000, guid: dc36e98614cdcae4c9197208353013c9, type: 3}
   isGrounded: 0
