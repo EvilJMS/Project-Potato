@@ -103,4 +103,17 @@ public class NetworkMenu : MonoBehaviour
         }
         return "127.0.0.1";
     }
+
+    public void SalirDelJuego()
+    {
+        Debug.Log("Saliendo del juego..."); // Esto es para verlo en la consola de Unity mientras pruebas
+
+        // Cierra la aplicación (Funciona en compilaciones de PC/Mac/Linux y APKs)
+        Application.Quit();
+
+        // Si estás probando en el Editor de Unity (Play Mode), esto detiene el modo Play para que notes que funciona:
+        #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+        #endif
+    }
 }
