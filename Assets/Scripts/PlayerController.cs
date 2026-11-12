@@ -9,19 +9,24 @@ public class PlayerController : NetworkBehaviour
     public float speed = 5f;
     public float jumpForce = 5f;
     public TextMeshProUGUI userName;
+    public GameObject panel;
 
     public AudioSource audioSource;
     public AudioClip jumpClip;
 
     private Renderer playerRenderer;
 
+    public GameObject menuManager;
+
     private Rigidbody rb;
     private Vector3 inputVector; // Cambiado a Vector3 para recibir la dirección orientada
     public bool isGrounded;
 
+
     [Header("Configuración de Disparo")]
     [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private Transform firePoint;
+
 
     private readonly NetworkVariable<Color> playerColor = new NetworkVariable<Color>(
         Color.white,
@@ -39,6 +44,7 @@ public class PlayerController : NetworkBehaviour
     {
         rb = GetComponent<Rigidbody>();
 
+
         playerRenderer = GetComponent<Renderer>();
         if (playerRenderer == null)
         {
@@ -50,6 +56,9 @@ public class PlayerController : NetworkBehaviour
     {
         base.OnNetworkSpawn();
 
+        panel = GameObject.FindGameObjectWithTag("PanelPausa");
+        Debug.Log(panel);
+
         playerColor.OnValueChanged += OnColorChanged;
         playerName.OnValueChanged += OnNameChanged;
 
@@ -58,13 +67,13 @@ public class PlayerController : NetworkBehaviour
             rb.isKinematic = false;
             playerColor.Value = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value, 1f);
             playerName.Value = $"Player_{OwnerClientId}";
-            userName.text = playerName.Value.ToString();
+            //userName.text = playerName.Value.ToString();
         }
         else
         {
             rb.isKinematic = true;
         }
-
+        userName.text = playerName.Value.ToString();
         // BLOQUEO AL SPAWNEAR: Si este objeto nos pertenece localmente, bloqueamos el ratón para jugar
         if (IsOwner)
         {
@@ -130,8 +139,13 @@ public class PlayerController : NetworkBehaviour
         // CONDICIÓN 1: Si pulsas Escape, liberas el ratón para menús
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
+            menuManager = GameObject.FindGameObjectWithTag("PanelPausa");
+            if (menuManager != null) {
+                menuManager.GetComponent<PausaManager>().activePausa();
+            }
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+
         }
 
         // CONDICIÓN 2: Si haces clic en el juego (y no en la UI), vuelves a capturar el ratón
@@ -139,8 +153,14 @@ public class PlayerController : NetworkBehaviour
         {
             if (!UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
             {
+                menuManager = GameObject.FindGameObjectWithTag("PanelPausa");
+                if (menuManager != null)
+                {
+                    menuManager.GetComponent<PausaManager>().desactivePausa();
+                }
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
+                
             }
         }
 
@@ -313,4 +333,5 @@ public class PlayerController : NetworkBehaviour
             isGrounded = false;
         }
     }
+
 }
