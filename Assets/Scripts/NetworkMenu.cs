@@ -1,8 +1,10 @@
+using System.Data;
 using TMPro;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.UnityConsent;
 
 public class NetworkMenu : MonoBehaviour
 {
@@ -76,8 +78,17 @@ public class NetworkMenu : MonoBehaviour
         if (ipClientInputField != null)
             ipClientInputField.gameObject.SetActive(false);
 
+        Debug.Log(NetworkManager.Singleton.ConnectedClientsList.Count);
+
         // Iniciar el Cliente (el cambio de escena le llegará automáticamente del servidor al conectarse con éxito)
-        NetworkManager.Singleton.StartClient();
+        if (NetworkManager.Singleton.ConnectedClientsList.Count >= 1)
+        {
+            Debug.Log("ServerLleno");
+        }
+        else {
+            NetworkManager.Singleton.StartClient();
+        }
+            
     }
 
     private string GetLocalIPAdress()

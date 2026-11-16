@@ -28,7 +28,7 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] private Transform firePoint;
 
 
-    private readonly NetworkVariable<Color> playerColor = new NetworkVariable<Color>(
+    private readonly NetworkVariable<Color> playerColor = new(
         Color.white,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server
@@ -36,6 +36,12 @@ public class PlayerController : NetworkBehaviour
 
     private readonly NetworkVariable<FixedString32Bytes> playerName = new NetworkVariable<FixedString32Bytes>(
         "AwA",
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+     );
+
+    private readonly NetworkVariable<int> playerTeam= new NetworkVariable<int>(
+        0,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server
      );
@@ -57,7 +63,7 @@ public class PlayerController : NetworkBehaviour
         base.OnNetworkSpawn();
 
         panel = GameObject.FindGameObjectWithTag("PanelPausa");
-        Debug.Log(panel);
+        Debug.Log(NetworkManager.ConnectedClients.Count);
 
         playerColor.OnValueChanged += OnColorChanged;
         playerName.OnValueChanged += OnNameChanged;
@@ -94,6 +100,7 @@ public class PlayerController : NetworkBehaviour
         base.OnNetworkDespawn();
         playerColor.OnValueChanged -= OnColorChanged;
         playerName.OnValueChanged -= OnNameChanged;
+        Debug.Log("entro aqui");
     }
 
     private void OnColorChanged(Color previousValue, Color newValue)

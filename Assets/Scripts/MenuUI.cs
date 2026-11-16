@@ -8,6 +8,7 @@ public class MenuUI : MonoBehaviour
     [Header("Componentes de UI")]
     public GameObject panelMenu;           // El objeto Canvas que contiene el menú
     public TMP_InputField inputFieldNombre;
+    public Color[] colors;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -39,9 +40,21 @@ public class MenuUI : MonoBehaviour
                     jugadorLocal.RequestNameChangeServerRpc(textoEscrito);
                 }
             }
+        }
+    }
 
-            // Cerramos el menú tras guardar
-            //ToggleMenu();
+    public void ChangeColor(int idColor)
+    {
+        NetworkClient localClient = NetworkManager.Singleton.LocalClient;
+        if (localClient != null && localClient.PlayerObject != null)
+        {
+            PlayerController jugadorLocal = localClient.PlayerObject.GetComponent<PlayerController>();
+
+            if (jugadorLocal != null)
+            {
+                // Llamamos al ServerRpc del jugador para que el servidor actualice el nombre
+                jugadorLocal.ChangeColorServerRpc(colors[idColor]);
+            }
         }
     }
 }
