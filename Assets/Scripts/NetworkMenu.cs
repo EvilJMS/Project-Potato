@@ -1,10 +1,9 @@
-using System.Data;
 using TMPro;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using UnityEngine.UnityConsent;
 
 public class NetworkMenu : MonoBehaviour
 {
@@ -13,20 +12,36 @@ public class NetworkMenu : MonoBehaviour
     public Button clientButton;
 
     [Header("Referencias de UI (TextMeshPro)")]
-    //public TextMeshProUGUI ipTextServer;
     public TMP_InputField ipClientInputField;
 
     [Header("Configuración de Escena")]
-    [SerializeField] private string nombreEscenaJuego = "GameScene"; // Nombre de la escena a la que quieres cambiar
+    [SerializeField] private string nombreEscenaJuego = "LobbyScene";
 
     private void Start()
     {
-        // Asignar los listeners a los botones de la UI
         if (hostButton != null)
             hostButton.onClick.AddListener(OnHostClicked);
 
         if (clientButton != null)
             clientButton.onClick.AddListener(OnClientClicked);
+    }
+
+    private void OnEnable()
+    {
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback += HandleClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback += HandleClientDisconnected;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback -= HandleClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= HandleClientDisconnected;
+        }
     }
 
     public void OnHostClicked()
@@ -40,20 +55,15 @@ public class NetworkMenu : MonoBehaviour
             Debug.Log("Configurando Host en puerto 7777...");
         }
 
-        if (ipClientInputField != null)
-            ipClientInputField.gameObject.SetActive(false);
-
-        // Iniciar el Host
         if (NetworkManager.Singleton.StartHost())
         {
-            // 1. Obtenemos la IP local automáticamente
-            string ipObtenida = GetLocalIPAdress();
+            if (ipClientInputField != null)
+                ipClientInputField.gameObject.SetActive(false);
 
-            // 2. La guardamos en el puente global para que la lea la siguiente escena
+            string ipObtenida = GetLocalIPAdress();
             ServerData.IPLocalGuardada = ipObtenida;
 
-            // 3. Cambiar de escena (Solo el Host da la orden)
-            NetworkManager.Singleton.SceneManager.LoadScene(nombreEscenaJuego, UnityEngine.SceneManagement.LoadSceneMode.Single);
+            NetworkManager.Singleton.SceneManager.LoadScene(nombreEscenaJuego, LoadSceneMode.Single);
         }
     }
 
@@ -73,22 +83,47 @@ public class NetworkMenu : MonoBehaviour
             transport.SetConnectionData(targetIP, 7777);
             transport.ConnectTimeoutMS = 1000;
             transport.MaxConnectAttempts = 3;
+            Debug.Log($"Conectando Cliente a {targetIP}:7777...");
         }
 
-        if (ipClientInputField != null)
-            ipClientInputField.gameObject.SetActive(false);
+        // Opcional: deshabilitar interacción mientras intenta conectar, sin ocultar el campo
+        SetClientUIInteractable(false);
 
-        Debug.Log(NetworkManager.Singleton.ConnectedClientsList.Count);
-
-        // Iniciar el Cliente (el cambio de escena le llegará automáticamente del servidor al conectarse con éxito)
-        if (NetworkManager.Singleton.ConnectedClientsList.Count >= 1)
+        if (!NetworkManager.Singleton.StartClient())
         {
-            Debug.Log("ServerLleno");
+            Debug.LogWarning("No se pudo iniciar el Cliente.");
+            SetClientUIInteractable(true);
         }
-        else {
-            NetworkManager.Singleton.StartClient();
+    }
+
+    private void HandleClientConnected(ulong clientId)
+    {
+        if (NetworkManager.Singleton != null && clientId == NetworkManager.Singleton.LocalClientId)
+        {
+            if (ipClientInputField != null)
+                ipClientInputField.gameObject.SetActive(false);
         }
-            
+    }
+
+    private void HandleClientDisconnected(ulong clientId)
+    {
+        if (NetworkManager.Singleton != null && clientId == NetworkManager.Singleton.LocalClientId)
+        {
+            // Si falla la conexión o se desconecta, restauramos los controles de UI
+            if (ipClientInputField != null)
+                ipClientInputField.gameObject.SetActive(true);
+
+            SetClientUIInteractable(true);
+        }
+    }
+
+    private void SetClientUIInteractable(bool interactable)
+    {
+        if (ipClientInputField != null)
+            ipClientInputField.interactable = interactable;
+
+        if (clientButton != null)
+            clientButton.interactable = interactable;
     }
 
     private string GetLocalIPAdress()
@@ -117,14 +152,11 @@ public class NetworkMenu : MonoBehaviour
 
     public void SalirDelJuego()
     {
-        Debug.Log("Saliendo del juego..."); // Esto es para verlo en la consola de Unity mientras pruebas
-
-        // Cierra la aplicación (Funciona en compilaciones de PC/Mac/Linux y APKs)
+        Debug.Log("Saliendo del juego...");
         Application.Quit();
 
-        // Si estás probando en el Editor de Unity (Play Mode), esto detiene el modo Play para que notes que funciona:
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
-        #endif
+#endif
     }
 }

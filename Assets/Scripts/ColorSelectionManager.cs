@@ -5,44 +5,75 @@ using UnityEngine.UI;
 
 public class ColorSelectionManager : NetworkBehaviour
 {
+    public static ColorSelectionManager Instance { get; private set; }
+
     [Header("Assign your color buttons in order")]
     [SerializeField] private Button[] colorButtons;
+    public Color[] colors;
 
-
-    // Stores the ClientId of the player who picked each color.
-    // ulong.MaxValue means the color is free.
     private NetworkList<ulong> colorOwners;
-
     private const ulong UNCLAIMED = ulong.MaxValue;
 
     private void Awake()
     {
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+
         colorOwners = new NetworkList<ulong>();
     }
 
     public override void OnNetworkSpawn()
     {
-        // Server initializes the list with all colors marked as unclaimed
+        base.OnNetworkSpawn();
+
+        if (colors == null || colors.Length == 0)
+        {
+            Debug.LogWarning("[ColorSelectionManager] El array 'colors' está vacío en el Inspector.");
+        }
+
+        if (colorButtons == null || colorButtons.Length == 0)
+        {
+            Debug.LogWarning("[ColorSelectionManager] El array 'colorButtons' está vacío en el Inspector.");
+        }
+
         if (IsServer)
         {
             colorOwners.Clear();
-            for (int i = 0; i < colorButtons.Length; i++)
+            int count = Mathf.Max(
+                colorButtons != null ? colorButtons.Length : 0,
+                colors != null ? colors.Length : 0
+            );
+
+            for (int i = 0; i < count; i++)
             {
                 colorOwners.Add(UNCLAIMED);
             }
 
-            // Free up a color if a player disconnects
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+            }
+
+            // Si ya había jugadores spawneados antes que este manager, asignarles color ahora
+            PlayerController[] existingPlayers = FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
+            foreach (PlayerController player in existingPlayers)
+            {
+                Color assigned = AssignFirstAvailableColorServer(player.OwnerClientId);
+                player.SetColorFromServer(assigned);
+            }
         }
 
-        // Hook up button click events locally
-        for (int i = 0; i < colorButtons.Length; i++)
+        if (colorButtons != null)
         {
-            int colorIndex = i; // Capture index for the lambda
-            colorButtons[i].onClick.AddListener(() => OnColorButtonClicked(colorIndex));
+            for (int i = 0; i < colorButtons.Length; i++)
+            {
+                if (colorButtons[i] == null) continue;
+                int colorIndex = i;
+                colorButtons[i].onClick.RemoveAllListeners();
+                colorButtons[i].onClick.AddListener(() => OnColorButtonClicked(colorIndex));
+            }
         }
 
-        // Listen for changes and refresh UI immediately for late joiners
         colorOwners.OnListChanged += OnColorListChanged;
         RefreshUI();
     }
@@ -55,25 +86,63 @@ public class ColorSelectionManager : NetworkBehaviour
         {
             NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
         }
+
+        if (Instance == this) Instance = null;
+        base.OnNetworkDespawn();
+    }
+
+    public Color AssignFirstAvailableColorServer(ulong clientId)
+    {
+        if (!IsServer || colors == null || colors.Length == 0)
+            return Color.white;
+
+        for (int i = 0; i < colorOwners.Count && i < colors.Length; i++)
+        {
+            if (colorOwners[i] == clientId)
+                return colors[i];
+        }
+
+        for (int i = 0; i < colorOwners.Count && i < colors.Length; i++)
+        {
+            if (colorOwners[i] == UNCLAIMED)
+            {
+                colorOwners[i] = clientId;
+                return colors[i];
+            }
+        }
+
+        return colors[0];
+    }
+
+    public void ReleaseColorServer(ulong clientId)
+    {
+        if (!IsServer) return;
+
+        for (int i = 0; i < colorOwners.Count; i++)
+        {
+            if (colorOwners[i] == clientId)
+            {
+                colorOwners[i] = UNCLAIMED;
+            }
+        }
     }
 
     private void OnColorButtonClicked(int colorIndex)
     {
-        // Ask the server to claim this color
+        Debug.Log($"[ColorSelectionManager] Click en botón de color {colorIndex}");
         RequestColorServerRpc(colorIndex);
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     private void RequestColorServerRpc(int colorIndex, RpcParams rpcParams = default)
     {
-        if (colorIndex < 0 || colorIndex >= colorOwners.Count) return;
+        if (colorIndex < 0 || colorIndex >= colorOwners.Count || colors == null || colorIndex >= colors.Length)
+            return;
 
         ulong senderId = rpcParams.Receive.SenderClientId;
 
-        // Block if another player already owns this color
         if (colorOwners[colorIndex] != UNCLAIMED) return;
 
-        // Release any previous color this player had selected
         for (int i = 0; i < colorOwners.Count; i++)
         {
             if (colorOwners[i] == senderId)
@@ -82,8 +151,17 @@ public class ColorSelectionManager : NetworkBehaviour
             }
         }
 
-        // Assign the new color to this player
         colorOwners[colorIndex] = senderId;
+
+        PlayerController[] players = FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
+        foreach (PlayerController player in players)
+        {
+            if (player.OwnerClientId == senderId)
+            {
+                player.SetColorFromServer(colors[colorIndex]);
+                break;
+            }
+        }
     }
 
     private void OnColorListChanged(NetworkListEvent<ulong> changeEvent)
@@ -93,27 +171,26 @@ public class ColorSelectionManager : NetworkBehaviour
 
     private void RefreshUI()
     {
-        ulong localClientId = NetworkManager.Singleton.LocalClientId;
+        if (colorButtons == null) return;
 
-        for (int i = 0; i < colorButtons.Length && i < colorOwners.Count; i++)
+        for (int i = 0; i < colorButtons.Length; i++)
         {
-            ulong ownerId = colorOwners[i];
+            if (colorButtons[i] == null) continue;
 
-            // Button is interactable ONLY if no one has claimed it.
-            // (If you want the player to be able to click their own selected color, 
-            // change this to: ownerId == UNCLAIMED || ownerId == localClientId)
-            colorButtons[i].interactable = (ownerId == UNCLAIMED);
+            if (i < colorOwners.Count)
+            {
+                colorButtons[i].interactable = (colorOwners[i] == UNCLAIMED);
+            }
+            else
+            {
+                colorButtons[i].interactable = true;
+            }
         }
     }
 
     private void OnClientDisconnected(ulong clientId)
     {
-        for (int i = 0; i < colorOwners.Count; i++)
-        {
-            if (colorOwners[i] == clientId)
-            {
-                colorOwners[i] = UNCLAIMED;
-            }
-        }
+        if (!IsServer) return;
+        ReleaseColorServer(clientId);
     }
 }

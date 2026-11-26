@@ -11,6 +11,15 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Lobby.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/RaceMinigame.unity
+    guid: c4623d1b86a3eaf44ba72ada746e4582
+  - enabled: 1
+    path: Assets/Scenes/FlagMinigame.unity
+    guid: 878fba78a2aac6340aaa833739e6b13d
+  - enabled: 1
+    path: Assets/Scenes/TnTRun.unity
+    guid: e6e729a059c05bb4e83dff6afb31bb32
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
