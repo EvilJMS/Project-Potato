@@ -11,9 +11,8 @@ GameObject:
   - component: {fileID: 8406557132470989846}
   - component: {fileID: 6594038675684727783}
   - component: {fileID: 5701945221980610289}
-  - component: {fileID: 5250614987312392491}
-  - component: {fileID: -3699805254579154988}
   - component: {fileID: 802738179536889943}
+  - component: {fileID: 7791597867057564138}
   m_Layer: 0
   m_Name: PlataformaBase
   m_TagString: Untagged
@@ -29,13 +28,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 399888132593249171}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: -37.97521, y: -0.4999994, z: -37.9557}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
 --- !u!33 &6594038675684727783
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -93,46 +92,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &5250614987312392491
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 399888132593249171}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1450869376
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  m_InScenePlacedDisabledByDefault: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  m_InScenePlaced: 0
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
---- !u!114 &-3699805254579154988
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 399888132593249171}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2e84d245902c3d46ad1ac4c520c1a32, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DisappearPlatform
-  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!65 &802738179536889943
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -154,3 +113,18 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.995533, y: 1.9955345, z: 1.0000002}
   m_Center: {x: -0.0000019073486, y: 0.00000005960466, z: 0}
+--- !u!114 &7791597867057564138
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 399888132593249171}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 256fe4c022c624f419c024585b48f4b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HexTile
+  breakDelay: 0.75
+  warningColor: {r: 1, g: 0.25, b: 0.2, a: 1}
+  shakeIntensity: 0.04

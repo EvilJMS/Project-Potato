@@ -344,6 +344,10 @@ public class PlayerController : NetworkBehaviour
         {
             CaptureFlagMode.Instance.SchedulePlayerRespawnServer(this);
         }
+        else if (HexagoniaMode.Instance != null)
+        {
+            // En Hexagonia no respawnea: queda eliminado hasta fin de ronda
+        }
         else
         {
             RespawnFromLavaServer();
